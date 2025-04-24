@@ -1,0 +1,109 @@
+{% extends 'admin/layout_admin.html' %}
+
+{% block title %}
+    <title>Commentaire d'un article</title>
+{% endblock %}
+
+{% block body %}
+
+   <div class="row">
+   <div class="col-5 bg-light p-3">
+        <h3>Les commentaires (dates décroissantes)</h3>
+       <h3>Article  <span style="color: green">{{ article.nom }}</span></h3>
+       {% if nb_commentaires.nb_commentaires_total is defined %}  <strong> {{ nb_commentaires.nb_commentaires_total }}</strong> commentaire(s)
+           dont {% if nb_commentaires.nb_commentaires_valider is defined %}<strong>
+                    {{ nb_commentaires.nb_commentaires_valider }}</strong> commentaire(s) validé(s)
+                {% endif %}
+        {% else %} Pas de commentaire
+       {% endif %}
+       <br>Note : {% if article.note_moyenne is not defined or article.note_moyenne is none or article.nb_notes is not defined or article.nb_notes == 0 %}
+            <strong>Pas de note</strong>
+       {% else %}
+            <strong><span style="color: #3A7734">{{ "{:,.1f}".format(article.note_moyenne|float) }}</span></strong> ( {{ article.nb_notes }} note(s))
+       {% endif %}
+   </div>
+   </div>
+
+   <div class="row" >
+
+        <table class="table" style="border: solid #8959A8 1px " >
+        {% if commentaires %}
+            <thead class="thead-dark">
+            <tr>
+                <th>Nom (pseudo)</th>
+                <th>Commentaires</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+                {% set displayed_comments = [] %}
+                {% for commentaire in commentaires %}
+                    {% if commentaire.id_commentaire_parent is none %}
+                        {% set _ = displayed_comments.append(commentaire.id_commentaire) %}
+                        <tr class="{% if commentaire.valider == 1 %}table-success{% else %}table-warning{% endif %}">
+                            <td>{{ commentaire.nom_utilisateur }} ({{ commentaire.id_utilisateur }})</td>
+                            <td>
+                                {% if commentaire.id_utilisateur == session['id_user'] %}
+                                    <span style="color: red">(réponse de l'administrateur du site (webmaster)) :</span>
+                                {% endif %}
+                                {{ commentaire.commentaire }}
+                                <br>
+                                <small class="text-muted">Publié le: {{ commentaire.date_publication }}</small>
+                                <small class="text-muted">(ID: {{ commentaire.id_commentaire }})</small>
+                            </td>
+                            <td>
+                                <form action="/admin/article/commentaires/delete" style="display: inline-block;" method="post">
+                                    <input type="hidden" name="id_article" value="{{ commentaire.id_article }}">
+                                    <input type="hidden" name="id_commentaire" value="{{ commentaire.id_commentaire }}">
+                                    <button class="btn btn-danger">Supprimer</button>
+                                </form>
+                                {% if commentaire.id_utilisateur != session['id_user'] %}
+                                    {% if commentaire.valider == 0 %}
+                                        <a href="/admin/article/commentaire/valider?id_commentaire={{ commentaire.id_commentaire }}&id_article={{ commentaire.id_article }}" class="btn btn-success">Valider</a>
+                                    {% endif %}
+                                    <form action="/admin/article/commentaires/repondre" style="display: inline-block;" method="GET">
+                                        <input type="hidden" name="id_article" value="{{ commentaire.id_article }}">
+                                        <input type="hidden" name="id_utilisateur" value="{{ commentaire.id_utilisateur }}">
+                                        <input type="hidden" name="id_commentaire" value="{{ commentaire.id_commentaire }}">
+                                        <input type="hidden" name="date_publication" value="{{ commentaire.date_publication }}">
+                                        <button class="btn btn-primary">Répondre</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- Afficher les réponses à ce commentaire -->
+                        {% for reponse in commentaires %}
+                            {% if reponse.id_commentaire_parent == commentaire.id_commentaire and reponse.id_commentaire not in displayed_comments %}
+                                {% set _ = displayed_comments.append(reponse.id_commentaire) %}
+                                <tr class="bg-light" style="margin-left: 20px; border-left: 4px solid #8959A8;">
+                                    <td style="padding-left: 20px;">{{ reponse.nom_utilisateur }} ({{ reponse.id_utilisateur }})</td>
+                                    <td>
+                                        <span style="color: red">(réponse de l'administrateur) :</span>
+                                        {{ reponse.commentaire }}
+                                        <br>
+                                        <small class="text-muted">Publié le: {{ reponse.date_publication }}</small>
+                                        <small class="text-muted">(ID: {{ reponse.id_commentaire }})</small>
+                                    </td>
+                                    <td>
+                                        <form action="/admin/article/commentaires/delete" style="display: inline-block;" method="post">
+                                            <input type="hidden" name="id_article" value="{{ reponse.id_article }}">
+                                            <input type="hidden" name="id_commentaire" value="{{ reponse.id_commentaire }}">
+                                            <button class="btn btn-danger">Supprimer</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <tr class="table-warning"><td colspan="3">Pas de commentaire</td></tr>
+            {% endif %}
+            </tbody>
+        </table>
+       <a class="btn btn-primary m-4 col-2" href="/admin/article/commentaires/valider?id_article={{ article.id_article }}">Valider les commentaires</a>
+       <a class="btn btn-outline-primary btn-lg" href="/admin/article/show">Retour vers la page d'accueil</a>
+    </div>
+
+{% endblock %}

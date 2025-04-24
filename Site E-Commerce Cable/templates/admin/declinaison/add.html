@@ -1,0 +1,115 @@
+{% extends "admin/layout_admin.html" %}
+{% block body %}
+<div class="container">
+    <h2>{% if declinaison %}Modifier{% else %}Ajouter{% endif %} une déclinaison</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-edit me-1"></i>
+            Formulaire de déclinaison pour {{ article.nom_cable }}
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% if declinaison %}/admin/declinaison/edit/{{ declinaison.id_declinaison_cable }}{% else %}/admin/declinaison/add/{{ article.id_cable }}{% endif %}">
+                
+                <div class="mb-3">
+                    <label for="couleur" class="form-label">Couleur</label>
+                    <select class="form-select" id="couleur" name="id_couleur" required onchange="checkUniqueSelection()">
+                        <option value="">-- Sélectionner une couleur --</option>
+                        <option value="unique" {% if declinaison and declinaison.nom_couleur == 'Unique' %}selected{% endif %}>Couleur unique</option>
+                        {% for couleur in couleurs %}
+                            <option value="{{ couleur.id_couleur }}" {% if declinaison and declinaison.id_couleur == couleur.id_couleur %}selected{% endif %}>
+                                {{ couleur.nom_couleur }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="longueur" class="form-label">Longueur</label>
+                    <select class="form-select" id="longueur" name="id_longueur" required onchange="checkUniqueSelection()">
+                        <option value="">-- Sélectionner une longueur --</option>
+                        <option value="unique" {% if declinaison and declinaison.nom_longueur == 'Unique' %}selected{% endif %}>Longueur unique</option>
+                        {% for longueur in longueurs %}
+                            <option value="{{ longueur.id_longueur }}" {% if declinaison and declinaison.id_longueur == longueur.id_longueur %}selected{% endif %}>
+                                {{ longueur.nom_longueur }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="prix" class="form-label">Prix</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="prix" name="prix" step="0.01" min="0" value="{% if declinaison %}{{ declinaison.prix_declinaison }}{% endif %}" required>
+                        <span class="input-group-text">€</span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="stock" class="form-label">Stock</label>
+                    <input type="number" class="form-control" id="stock" name="stock" min="0" value="{% if declinaison %}{{ declinaison.stock }}{% else %}0{% endif %}" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Enregistrer
+                </button>
+                <a href="/admin/article/details/{% if declinaison %}{{ declinaison.id_cable }}{% else %}{{ article.id_cable }}{% endif %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Annuler
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function checkUniqueSelection() {
+        const couleurSelect = document.getElementById('couleur');
+        const longueurSelect = document.getElementById('longueur');
+        
+        // Si "Couleur unique" est sélectionné
+        if (couleurSelect.value === 'unique') {
+            // Désactiver l'option "Longueur unique"
+            const uniqueOption = longueurSelect.querySelector('option[value="unique"]');
+            if (uniqueOption) {
+                uniqueOption.disabled = true;
+            }
+            
+            // Si "Longueur unique" était sélectionné, réinitialiser
+            if (longueurSelect.value === 'unique') {
+                longueurSelect.value = '';
+            }
+        } else {
+            // Réactiver l'option "Longueur unique" si elle était désactivée
+            const uniqueOption = longueurSelect.querySelector('option[value="unique"]');
+            if (uniqueOption) {
+                uniqueOption.disabled = false;
+            }
+        }
+        
+        // Si "Longueur unique" est sélectionné
+        if (longueurSelect.value === 'unique') {
+            // Désactiver l'option "Couleur unique"
+            const uniqueOption = couleurSelect.querySelector('option[value="unique"]');
+            if (uniqueOption) {
+                uniqueOption.disabled = true;
+            }
+            
+            // Si "Couleur unique" était sélectionné, réinitialiser
+            if (couleurSelect.value === 'unique') {
+                couleurSelect.value = '';
+            }
+        } else {
+            // Réactiver l'option "Couleur unique" si elle était désactivée
+            const uniqueOption = couleurSelect.querySelector('option[value="unique"]');
+            if (uniqueOption) {
+                uniqueOption.disabled = false;
+            }
+        }
+    }
+    
+    // Exécuter la vérification au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        checkUniqueSelection();
+    });
+</script>
+{% endblock %} 

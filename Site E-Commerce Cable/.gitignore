@@ -1,0 +1,4 @@
+.env
+.idea
+connexion_db.py
+__pycache__/

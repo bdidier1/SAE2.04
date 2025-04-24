@@ -1,0 +1,142 @@
+{% extends 'admin/layout_admin.html' %}
+
+{% block javascripts %}
+    {{ super() }}
+{% endblock %}
+
+{% block javascripts_head %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+{% endblock %}
+
+{% block title %}
+    <title>Visualisation des ventes par département</title>
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h2 class="text-center">Statistiques des ventes par département</h2>
+
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <a href="#" class="btn btn-primary me-2" onclick="showVentes()">Nombre de commandes</a>
+                <a href="#" class="btn btn-primary" onclick="showCA()">Chiffre d'affaires</a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-7">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <canvas id="chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title text-center">Statistiques par département</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Département</th>
+                                        <th>Ventes</th>
+                                        <th>Clients</th>
+                                        <th>CA</th>
+                                        <th>Panier moyen</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for stat in stats %}
+                                    <tr>
+                                        <td>{{ stat.dep }}</td>
+                                        <td>{{ stat.nombre_ventes }}</td>
+                                        <td>{{ stat.nombre_clients }}</td>
+                                        <td>{{ "%.2f"|format(stat.chiffre_affaires) }} €</td>
+                                        <td>{{ "%.2f"|format(stat.panier_moyen) }} €</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card" style="height: 100%;">
+                    <div class="card-body">
+                        <div id="map-container" style="width: 100%; height: 100%; overflow: hidden;">
+                            {% include 'admin/dataviz/franceMap.html' %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Définition des données en dehors de la configuration du graphique
+        const chartLabels = {{ labels|tojson|safe }};
+        const chartValuesVentes = {{ values_ventes|tojson|safe }};
+        const chartValuesCA = {{ values_ca|tojson|safe }};
+        const statsData = {{ stats|tojson|safe }};
+
+        var ctx = document.getElementById('chart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'Nombre de ventes',
+                    data: chartValuesVentes,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true,
+                            stepSize: 1
+                        }
+                    }]
+                }
+            }
+        });
+
+        function showVentes() {
+            chart.data.datasets[0].label = 'Nombre de ventes';
+            chart.data.datasets[0].data = chartValuesVentes;
+            chart.options.scales.yAxes[0].ticks.stepSize = 1;
+            chart.update();
+
+            statsData.forEach(stat => {
+                const element = document.getElementById(stat.dep);
+                if (element) {
+                    element.style.fill = "#000000";
+                    element.setAttribute("fill-opacity", stat.indice_ventes);
+                }
+            });
+        }
+
+        function showCA() {
+            chart.data.datasets[0].label = 'Chiffre d\'affaires (€)';
+            chart.data.datasets[0].data = chartValuesCA;
+            chart.options.scales.yAxes[0].ticks.stepSize = null;
+            chart.update();
+
+            statsData.forEach(stat => {
+                const element = document.getElementById(stat.dep);
+                if (element) {
+                    element.style.fill = "#000000";
+                    element.setAttribute("fill-opacity", stat.indice_ca);
+                }
+            });
+        }
+
+        showVentes();
+    </script>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "client/layout_client.html" %}
+{% block body %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h1>{{ article.nom }}</h1>
+            <div class="row">
+                <div class="col-md-6">
+                    {% if article.image %}
+                        <img src="{{ url_for('static', filename='images/') }}{{ article.image }}" alt="{{ article.nom }}" class="img-fluid">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='images/no_photo.jpeg') }}" alt="Pas d'image" class="img-fluid">
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h3>Choisissez votre déclinaison :</h3>
+                    <form action="{{ url_for('client_article.client_article_declinaisons') }}" method="get">
+                        <input type="hidden" name="id_article" value="{{ article.id_article }}">
+
+                        <div class="form-group mb-3">
+                            <label for="couleur">Couleur :</label>
+                            <select name="couleur" id="couleur" class="form-control" required>
+                                <option value="">-- Sélectionnez une couleur --</option>
+                                {% set couleurs_vues = {} %}
+                                {% for declinaison in declinaisons %}
+                                    {% if declinaison.id_couleur not in couleurs_vues %}
+                                        {% set _ = couleurs_vues.update({declinaison.id_couleur: true}) %}
+                                        <option value="{{ declinaison.id_couleur }}" {% if selected_couleur == declinaison.id_couleur %}selected{% endif %}>
+                                            {{ declinaison.couleur }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="longueur">Longueur :</label>
+                            <select name="longueur" id="longueur" class="form-control" required>
+                                <option value="">-- Sélectionnez une longueur --</option>
+                                {% set longueurs_vues = {} %}
+                                {% for declinaison in declinaisons %}
+                                    {% if declinaison.id_longueur not in longueurs_vues %}
+                                        {% set _ = longueurs_vues.update({declinaison.id_longueur: true}) %}
+                                        <option value="{{ declinaison.id_longueur }}" {% if selected_longueur == declinaison.id_longueur %}selected{% endif %}>
+                                            {{ declinaison.longueur }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary mb-3">
+                            <i class="fas fa-search"></i> Afficher cette déclinaison
+                        </button>
+                    </form>
+
+                    {% if selected_declinaison %}
+                        <div class="alert alert-info mb-3">
+                            Prix : {{ selected_declinaison.prix }} € | Stock disponible : {{ selected_declinaison.stock }}
+                        </div>
+
+                        <form action="/client/panier/add" method="post" id="form-ajout-panier">
+                            <input type="hidden" name="id_declinaison_article" value="{{ selected_declinaison.id_declinaison }}">
+
+                            <div class="form-group mb-3">
+                                <label for="quantite">Quantité :</label>
+                                <input type="number" name="quantite" id="quantite" class="form-control" min="1" max="{{ selected_declinaison.stock }}" value="1" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-success mt-3" {% if selected_declinaison.stock <= 0 %}disabled{% endif %}>
+                                <i class="fas fa-shopping-cart"></i> Ajouter au panier
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <h3>Toutes les déclinaisons disponibles :</h3>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Couleur</th>
+                            <th>Longueur</th>
+                            <th>Prix</th>
+                            <th>Stock</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for declinaison in declinaisons %}
+                            <tr>
+                                <td>{{ declinaison.couleur }}</td>
+                                <td>{{ declinaison.longueur }}</td>
+                                <td>{{ declinaison.prix }} €</td>
+                                <td>
+                                    {% if declinaison.stock > 0 %}
+                                        {{ declinaison.stock }}
+                                    {% else %}
+                                        <span class="text-danger">Rupture de stock</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if declinaison.stock > 0 %}
+                                        <form action="/client/panier/add" method="post" class="d-inline">
+                                            <input type="hidden" name="id_declinaison_article" value="{{ declinaison.id_declinaison }}">
+                                            <input type="hidden" name="quantite" value="1">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fas fa-plus"></i> Ajouter
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-secondary" disabled>
+                                            <i class="fas fa-plus"></i> Ajouter
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            {% include('client/boutique/_panier.html') %}
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="/client/article/show" class="btn btn-primary">
+            <i class="fas fa-arrow-left"></i> Retour à la boutique
+        </a>
+    </div>
+</div>
+{% endblock %}
